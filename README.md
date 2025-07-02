@@ -21,7 +21,7 @@ The `cleanup` tool analyzes the first-level contents of an archive, automaticall
 
 ```bash
 # Clone the project
-git clone <repository-url>
+git clone https://github.com/krmmzs/badExtraction.git
 cd badExtraction
 
 # Build and install to $HOME/bin
@@ -108,7 +108,7 @@ Cleanup complete
 
 ## System Requirements
 
-- Go 1.16 or higher (for compilation)
+- Go 1.20 or higher (for compilation)
 - Linux/macOS/Windows systems
 - For `.tar.xz` format, requires `xz` tool to be installed on the system
 

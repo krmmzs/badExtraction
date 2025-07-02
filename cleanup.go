@@ -10,7 +10,7 @@ import (
 
 func main() {
 	if len(os.Args) != 2 {
-		fmt.Println("使用方法: go run cleanup.go <压缩包文件名>")
+		fmt.Println("使用方法: cleanup <压缩包文件名>")
 		os.Exit(1)
 	}
 

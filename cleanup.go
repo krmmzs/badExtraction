@@ -1,10 +1,16 @@
 package main
 
 import (
+	"archive/tar"
 	"archive/zip"
 	"bufio"
+	"compress/bzip2"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -57,7 +63,59 @@ func fileExists(filePath string) bool {
 	return !os.IsNotExist(err)
 }
 
+type ArchiveFormat int
+
+const (
+	FormatUnknown ArchiveFormat = iota
+	FormatZip
+	FormatTar
+	FormatTarGz
+	FormatTarBz2
+	FormatTarXz
+)
+
+func detectArchiveFormat(filePath string) ArchiveFormat {
+	ext := strings.ToLower(filepath.Ext(filePath))
+	baseName := strings.ToLower(filepath.Base(filePath))
+	
+	switch {
+	case ext == ".zip":
+		return FormatZip
+	case ext == ".tar":
+		return FormatTar
+	case ext == ".gz" && strings.HasSuffix(baseName, ".tar.gz"):
+		return FormatTarGz
+	case ext == ".tgz":
+		return FormatTarGz
+	case ext == ".bz2" && strings.HasSuffix(baseName, ".tar.bz2"):
+		return FormatTarBz2
+	case ext == ".xz" && strings.HasSuffix(baseName, ".tar.xz"):
+		return FormatTarXz
+	default:
+		return FormatUnknown
+	}
+}
+
 func getTopLevelItems(archiveFilePath string) ([]string, error) {
+	format := detectArchiveFormat(archiveFilePath)
+	
+	switch format {
+	case FormatZip:
+		return getTopLevelItemsFromZip(archiveFilePath)
+	case FormatTar:
+		return getTopLevelItemsFromTar(archiveFilePath)
+	case FormatTarGz:
+		return getTopLevelItemsFromTarGz(archiveFilePath)
+	case FormatTarBz2:
+		return getTopLevelItemsFromTarBz2(archiveFilePath)
+	case FormatTarXz:
+		return getTopLevelItemsFromTarXz(archiveFilePath)
+	default:
+		return nil, fmt.Errorf("不支持的压缩格式")
+	}
+}
+
+func getTopLevelItemsFromZip(archiveFilePath string) ([]string, error) {
 	zipReader, err := zip.OpenReader(archiveFilePath)
 	if err != nil {
 		return nil, err
@@ -72,6 +130,92 @@ func getTopLevelItems(archiveFilePath string) ([]string, error) {
 		}
 
 		pathParts := strings.Split(strings.Trim(file.Name, "/"), "/")
+		if len(pathParts) > 0 && pathParts[0] != "" {
+			topLevelItemsMap[pathParts[0]] = true
+		}
+	}
+
+	var topLevelItems []string
+	for item := range topLevelItemsMap {
+		topLevelItems = append(topLevelItems, item)
+	}
+
+	return topLevelItems, nil
+}
+
+func getTopLevelItemsFromTar(archiveFilePath string) ([]string, error) {
+	file, err := os.Open(archiveFilePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	return extractTopLevelItemsFromTarReader(file)
+}
+
+func getTopLevelItemsFromTarGz(archiveFilePath string) ([]string, error) {
+	file, err := os.Open(archiveFilePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	gzReader, err := gzip.NewReader(file)
+	if err != nil {
+		return nil, err
+	}
+	defer gzReader.Close()
+
+	return extractTopLevelItemsFromTarReader(gzReader)
+}
+
+func getTopLevelItemsFromTarBz2(archiveFilePath string) ([]string, error) {
+	file, err := os.Open(archiveFilePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	bz2Reader := bzip2.NewReader(file)
+	return extractTopLevelItemsFromTarReader(bz2Reader)
+}
+
+func getTopLevelItemsFromTarXz(archiveFilePath string) ([]string, error) {
+	cmd := exec.Command("xz", "-dc", archiveFilePath)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, fmt.Errorf("无法创建xz解压管道: %v", err)
+	}
+
+	if err := cmd.Start(); err != nil {
+		return nil, fmt.Errorf("无法启动xz解压: %v", err)
+	}
+	defer func() {
+		stdout.Close()
+		cmd.Wait()
+	}()
+
+	return extractTopLevelItemsFromTarReader(stdout)
+}
+
+func extractTopLevelItemsFromTarReader(reader io.Reader) ([]string, error) {
+	tarReader := tar.NewReader(reader)
+	topLevelItemsMap := make(map[string]bool)
+
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		if header.Name == "" {
+			continue
+		}
+
+		pathParts := strings.Split(strings.Trim(header.Name, "/"), "/")
 		if len(pathParts) > 0 && pathParts[0] != "" {
 			topLevelItemsMap[pathParts[0]] = true
 		}

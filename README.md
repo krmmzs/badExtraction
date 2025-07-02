@@ -1,133 +1,133 @@
 # badExtraction
 
-一个用于清理错误解压文件的Go工具。
+A Go tool for cleaning up accidentally extracted archive files.
 
-## 为什么需要这个项目？
+## Why does this project exist?
 
-在日常使用中，我们经常会遇到这样的情况：在一个包含大量文件的目录中解压了一个压缩包，结果压缩包内的文件和文件夹散落在当前目录中，与原本的文件混在一起。这时候很难区分哪些是原有的文件，哪些是刚解压出来的文件，手动清理非常麻烦且容易出错。
+We often encounter this situation: accidentally extracting an archive in a directory that already contains many files, causing the archive's contents to scatter and mix with existing files. It becomes difficult to distinguish between original files and newly extracted ones, making manual cleanup tedious and error-prone.
 
-`cleanup` 工具通过分析压缩包的第一级内容，自动识别当前目录中可能来自该压缩包的文件和文件夹，并提供安全的删除功能。
+The `cleanup` tool analyzes the first-level contents of an archive, automatically identifies files and folders in the current directory that may have come from that archive, and provides safe deletion functionality.
 
-## 功能特性
+## Features
 
-- **多格式支持**: 支持 ZIP、TAR、TAR.GZ、TAR.BZ2、TAR.XZ 等常见压缩格式
-- **智能检测**: 自动分析压缩包第一级内容，匹配当前目录中的对应文件/文件夹
-- **安全确认**: 删除前会列出所有待删除项目，需要用户确认后才执行
-- **错误处理**: 完善的错误提示和异常处理机制
+- **Multi-format support**: Supports ZIP, TAR, TAR.GZ, TAR.BZ2, TAR.XZ and other common archive formats
+- **Smart detection**: Automatically analyzes archive's first-level contents and matches corresponding files/folders in current directory
+- **Safe confirmation**: Lists all items to be deleted before execution, requires user confirmation
+- **Error handling**: Comprehensive error messages and exception handling
 
-## 安装方法
+## Installation
 
-### 使用 Makefile 安装
+### Using Makefile
 
 ```bash
-# 克隆项目
+# Clone the project
 git clone <repository-url>
 cd badExtraction
 
-# 编译并安装到 $HOME/bin
+# Build and install to $HOME/bin
 make install
 
-# 或者仅编译
+# Or just build
 make build
 
-# 清理编译文件
+# Clean build artifacts
 make clean
 
-# 卸载程序
+# Uninstall the program
 make uninstall
 ```
 
-### 手动编译安装
+### Manual Build and Install
 
 ```bash
-# 编译
+# Build
 go build -o cleanup cleanup.go
 
-# 手动安装到系统路径
+# Install to system path
 sudo cp cleanup /usr/local/bin/
-# 或安装到用户路径
+# Or install to user path
 cp cleanup $HOME/bin/
 ```
 
-## 使用方法
+## Usage
 
 ```bash
-cleanup <压缩包文件名>
+cleanup <archive-filename>
 ```
 
-### 使用示例
+### Examples
 
 ```bash
-# 处理 ZIP 文件
+# Handle ZIP files
 cleanup archive.zip
 
-# 处理 TAR.XZ 文件
+# Handle TAR.XZ files
 cleanup software-1.0.tar.xz
 
-# 处理 TAR.GZ 文件
+# Handle TAR.GZ files
 cleanup project.tar.gz
 ```
 
-### 使用流程
+### Workflow
 
-1. 在包含错误解压文件的目录中运行 `cleanup` 命令
-2. 程序会分析指定压缩包的第一级内容
-3. 显示当前目录中匹配的文件和文件夹列表
-4. 确认删除操作 (输入 `y` 或 `yes` 确认，其他任何输入取消)
-5. 程序执行删除并显示结果
+1. Run the `cleanup` command in the directory containing accidentally extracted files
+2. The program analyzes the first-level contents of the specified archive
+3. Displays a list of matching files and folders in the current directory
+4. Confirm deletion (enter `y` or `yes` to confirm, any other input cancels)
+5. The program executes deletion and shows results
 
-### 示例输出
+### Example Output
 
 ```
 $ cleanup example.tar.xz
-发现以下文件/文件夹可能来自压缩包解压:
+Found the following files/folders that may have come from archive extraction:
   - src/
   - README.md
   - Makefile
-确认删除这些文件和文件夹吗? (y/N): y
-已删除: src/
-已删除: README.md
-已删除: Makefile
-清理完成
+Confirm deletion of these files and folders? (y/N): y
+Deleted: src/
+Deleted: README.md
+Deleted: Makefile
+Cleanup complete
 ```
 
-## 支持的压缩格式
+## Supported Archive Formats
 
-- `.zip` - ZIP 压缩文件
-- `.tar` - TAR 归档文件
-- `.tar.gz` / `.tgz` - TAR + GZIP 压缩文件
-- `.tar.bz2` - TAR + BZIP2 压缩文件
-- `.tar.xz` - TAR + XZ 压缩文件
+- `.zip` - ZIP archive files
+- `.tar` - TAR archive files
+- `.tar.gz` / `.tgz` - TAR + GZIP compressed files
+- `.tar.bz2` - TAR + BZIP2 compressed files
+- `.tar.xz` - TAR + XZ compressed files
 
-## 安全说明
+## Safety Notes
 
-- 程序只会删除与压缩包第一级内容匹配的文件和文件夹
-- 删除前会显示完整列表并要求用户确认
-- 如果压缩包不存在或格式不支持，程序会给出明确提示
-- 删除操作不可逆，请谨慎确认
+- The program only deletes files and folders that match the archive's first-level contents
+- Shows complete list and requires user confirmation before deletion
+- Provides clear error messages if archive doesn't exist or format is unsupported
+- Deletion operations are irreversible, please confirm carefully
 
-## 系统要求
+## System Requirements
 
-- Go 1.16 或更高版本 (编译时)
-- Linux/macOS/Windows 系统
-- 对于 `.tar.xz` 格式，需要系统安装 `xz` 工具
+- Go 1.16 or higher (for compilation)
+- Linux/macOS/Windows systems
+- For `.tar.xz` format, requires `xz` tool to be installed on the system
 
-## 开发
+## Development
 
 ```bash
-# 获取帮助
+# Get help
 make help
 
-# 编译
+# Build
 make build
 
-# 安装
+# Install
 make install
 
-# 清理
+# Clean
 make clean
 ```
 
-## 许可证
+## License
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
